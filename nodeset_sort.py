@@ -2,6 +2,13 @@
 
 import argparse
 from lxml import etree
+import pdb
+
+def sortchildrenby(parent, attr):
+    parent[:] = sorted(parent, key=lambda child: child.get(attr))
+
+def sortchildrenbytext(parent):
+    parent[:] = sorted(parent, key=lambda child: child.text)
 
 def main():
 
@@ -13,10 +20,14 @@ def main():
 
     tree = etree.parse(args.input)
 
-    def sortchildrenby(parent, attr):
-        parent[:] = sorted(parent, key=lambda child: child.get(attr))
 
-    sortchildrenby(tree.getroot(), 'NodeId')
+    root = tree.getroot()
+
+    sortchildrenby(root, 'NodeId')
+
+    references = root.findall('.//{http://opcfoundation.org/UA/2011/03/UANodeSet.xsd}References')
+    for _ in references:
+        sortchildrenbytext(_)
 
     tree.write(args.output, encoding='utf-8', xml_declaration=True)
 
