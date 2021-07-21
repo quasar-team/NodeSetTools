@@ -14,12 +14,15 @@ def etree_from_filename(fn):
     file = open(fn, 'r', encoding='utf-8')
     return etree.parse(file)
 
-def nodeid_scan(entity_type, reference_tree, test_tree):
+def nodeid_scan(entity_type, reference_tree, test_tree, ignore_nodeids):
     '''Scans all entity_type in reference tree and xvalidates in test_tree
     entity_type to be anything that has NodeId, so any descendant of UANode, e.g. UAVariable, UAObject...'''
     any_failure = False
     for ref_entity in reference_tree.xpath(f'x:{entity_type}', namespaces=NAMESPACES):
         ref_nodeid = ref_entity.attrib["NodeId"]
+        if any([id in ref_nodeid for id in ignore_nodeids]):
+            print(f'{Fore.YELLOW}Ignoring{Style.RESET_ALL} the entity with nodeid: {Fore.BLUE}{ref_nodeid}{Style.RESET_ALL}')
+            continue
         logging.debug(f'At: {ref_nodeid}')
         xpath_expr = f"x:{entity_type}[@NodeId='{ref_nodeid}']"
         q = test_tree.xpath(xpath_expr, namespaces=NAMESPACES)
@@ -48,6 +51,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("reference")
     parser.add_argument("test")
+    parser.add_argument("--ignore_nodeids", nargs="*", default=[])
 
     args = parser.parse_args()
     print(args.reference)
@@ -59,7 +63,7 @@ def main():
 
     NodeIdEntities = ['UAObject', 'UAVariable', 'UAMethod']
     for entity_type in NodeIdEntities:
-        fail = nodeid_scan(entity_type, reference_tree, test_tree)
+        fail = nodeid_scan(entity_type, reference_tree, test_tree, args.ignore_nodeids)
         any_failure = any_failure or fail
 
     if any_failure:
