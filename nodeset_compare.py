@@ -27,9 +27,13 @@ def nodeid_scan(entity_type, reference_tree, test_tree, ignore_nodeids):
         xpath_expr = f"x:{entity_type}[@NodeId='{ref_nodeid}']"
         q = test_tree.xpath(xpath_expr, namespaces=NAMESPACES)
         if len(q) != 1:
-            print(f'Error: entity in test_tree. Type: {entity_type}, NodeId: {ref_nodeid}')
+            if len(q) < 1:
+                print(f'{Fore.RED}Error: entity missing{Style.RESET_ALL} in test_tree. Type: {entity_type}, NodeId: {ref_nodeid}')
+            if len(q) > 1:
+                print(f'{Fore.RED}Error: duplicate entity in test_tree, NodeId: {ref_nodeid}')
             any_failure = True
-        test_element = q[0]
+            continue
+        test_element = q[0] # now guaranteed that this is the only returned element.
         if test_element != ref_entity:
             # let's see why they are different.
             if test_element.attrib != ref_entity.attrib:
@@ -54,7 +58,7 @@ def main():
     parser.add_argument("--ignore_nodeids", nargs="*", default=[])
 
     args = parser.parse_args()
-    print(args.reference)
+    print(f'{Fore.GREEN}Reference nodeset: {Style.RESET_ALL}{args.reference}')
 
     reference_tree = etree_from_filename(args.reference)
     test_tree = etree_from_filename(args.test)
